@@ -295,7 +295,7 @@ async def practice(ctx: commands.Context, amount: int = 5, category: Optional[st
     if not questions:
         await ctx.send("No encontré preguntas para esa selección.")
         return
-    await run_quiz(ctx, questions, title="Practice Mode", practice=True)
+    await run_quiz(ctx, questions, title="Modo Práctica", practice=True)
 
 @bot.hybrid_command(name="challenge", description="Modo desafío con preguntas aleatorias y tiempo más corto.")
 @app_commands.describe(amount="Cantidad de preguntas (1-20)", category="Filtra por categoría")
