@@ -176,7 +176,7 @@ class FlashcardView(discord.ui.View):
     async def reveal(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.revealed = True
         embed = discord.Embed(
-            title="Flashcard",
+            title="Tarjeta de Estudio",
             description=self.question["question"],
             color=discord.Color.gold(),
         )
@@ -328,7 +328,7 @@ async def flashcard(ctx: commands.Context, category: Optional[str] = None):
     q = random.choice(pool)
     view = FlashcardView(ctx.author.id, q)
     embed = discord.Embed(
-        title="Flashcard",
+        title="Tarjeta de Estudio",
         description=q["question"],
         color=discord.Color.gold(),
     )
