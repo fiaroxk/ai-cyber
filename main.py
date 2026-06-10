@@ -79,6 +79,8 @@ def pick_questions(amount: int = 10, category: Optional[str] = None, difficulty:
     amount = max(1, min(amount, len(pool)))
     return random.sample(pool, amount)
 
+DIFFICULTY_ES = {"easy": "Fácil", "medium": "Medio", "hard": "Difícil"}
+
 def question_embed(q: dict, index: int, total: int, title: str, reveal: bool = False, chosen: Optional[int] = None):
     embed = discord.Embed(
         title=f"{title} — {index}/{total}",
@@ -97,7 +99,7 @@ def question_embed(q: dict, index: int, total: int, title: str, reveal: bool = F
             options.append(f"{prefix}{option}")
     embed.add_field(name="Opciones", value="\n".join(options), inline=False)
     embed.add_field(name="Categoría", value=q["category"], inline=True)
-    embed.add_field(name="Dificultad", value=q["difficulty"].title(), inline=True)
+    embed.add_field(name="Dificultad", value=DIFFICULTY_ES.get(q["difficulty"], q["difficulty"].title()), inline=True)
     if reveal:
         embed.add_field(name="Explicación", value=q["explanation"], inline=False)
     embed.set_footer(text="Responde con botones. Solo la persona que inició el reto puede contestar.")
@@ -176,7 +178,7 @@ class FlashcardView(discord.ui.View):
     async def reveal(self, interaction: discord.Interaction, button: discord.ui.Button):
         self.revealed = True
         embed = discord.Embed(
-            title="Tarjeta de Estudio",
+            title="Flashcard",
             description=self.question["question"],
             color=discord.Color.gold(),
         )
@@ -232,7 +234,7 @@ async def run_quiz(ctx: commands.Context, questions: list[dict], title: str, pra
             )
             result.add_field(name="Explicación", value=q["explanation"], inline=False)
             result.add_field(name="Categoría", value=q["category"], inline=True)
-            result.add_field(name="Dificultad", value=q["difficulty"].title(), inline=True)
+            result.add_field(name="Dificultad", value=DIFFICULTY_ES.get(q["difficulty"], q["difficulty"].title()), inline=True)
             await msg.edit(embed=result, view=None)
             wrong += 1
             continue
@@ -295,7 +297,7 @@ async def practice(ctx: commands.Context, amount: int = 5, category: Optional[st
     if not questions:
         await ctx.send("No encontré preguntas para esa selección.")
         return
-    await run_quiz(ctx, questions, title="Practice Mode", practice=True)
+    await run_quiz(ctx, questions, title="Modo Práctica", practice=True)
 
 @bot.hybrid_command(name="challenge", description="Modo desafío con preguntas aleatorias y tiempo más corto.")
 @app_commands.describe(amount="Cantidad de preguntas (1-20)", category="Filtra por categoría")
@@ -312,7 +314,7 @@ async def challenge(ctx: commands.Context, amount: int = 5, category: Optional[s
     if not questions:
         await ctx.send("No encontré preguntas para esa selección.")
         return
-    await run_quiz(ctx, questions, title="Challenge Mode", practice=False)
+    await run_quiz(ctx, questions, title="Modo Desafío", practice=False)
 
 @bot.hybrid_command(name="flashcard", description="Modo flashcard para estudiar.")
 @app_commands.describe(category="Filtra por categoría")
@@ -328,12 +330,12 @@ async def flashcard(ctx: commands.Context, category: Optional[str] = None):
     q = random.choice(pool)
     view = FlashcardView(ctx.author.id, q)
     embed = discord.Embed(
-        title="Tarjeta de Estudio",
+        title="Flashcard",
         description=q["question"],
         color=discord.Color.gold(),
     )
     embed.add_field(name="Categoría", value=q["category"], inline=True)
-    embed.add_field(name="Dificultad", value=q["difficulty"].title(), inline=True)
+    embed.add_field(name="Dificultad", value=DIFFICULTY_ES.get(q["difficulty"], q["difficulty"].title()), inline=True)
     await ctx.send(embed=embed, view=view)
 
 @bot.hybrid_command(name="category", description="Juega un quiz usando una categoría específica.")
@@ -347,7 +349,7 @@ async def category(ctx: commands.Context, name: str, amount: int = 10):
     if not questions:
         await ctx.send("No encontré preguntas para esa categoría.")
         return
-    await run_quiz(ctx, questions, title=f"Category Quiz: {cat}")
+    await run_quiz(ctx, questions, title=f"Quiz de Categoría: {cat}")
 
 @bot.hybrid_command(name="daily", description="Resuelve la pregunta del día.")
 async def daily(ctx: commands.Context):
@@ -358,7 +360,7 @@ async def daily(ctx: commands.Context):
         await ctx.send("Ya resolviste la pregunta diaria de hoy. Vuelve mañana.")
         return
     view = AnswerView(ctx.author.id, q, timeout=60)
-    embed = question_embed(q, 1, 1, "Daily Challenge")
+    embed = question_embed(q, 1, 1, "Reto Diario")
     msg = await ctx.send(embed=embed, view=view)
     await view.wait()
     if view.choice is None:
@@ -395,7 +397,7 @@ async def leaderboard(ctx: commands.Context):
         user = bot.get_user(int(uid))
         name = user.name if user else f"Usuario {uid}"
         lines.append(f"**{i}. {name}** — XP: {xp} | ✔ {correct} | 🎯 {played}")
-    embed = discord.Embed(title="Leaderboard", description="\n".join(lines), color=discord.Color.gold())
+    embed = discord.Embed(title="Tabla de Clasificación", description="\n".join(lines), color=discord.Color.gold())
     await ctx.send(embed=embed)
 
 @bot.hybrid_command(name="categories", description="Lista las categorías disponibles.")
