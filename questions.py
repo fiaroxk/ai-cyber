@@ -1,32 +1,437 @@
-# questions.py
-# Educational cybersecurity question bank for a Discord bot.
-# Focuses on safe, defensive learning content.
+# main.py
+import os
+import json
+import random
+from datetime import datetime, date
+from pathlib import Path
+from typing import Optional
 
-QUESTIONS = [{'category': 'Seguridad de Redes', 'difficulty': 'fácil', 'question': 'What does a firewall primarily do?', 'options': ['Encrypts files', 'Blocks or filters network traffic', 'Creates backups', 'Speeds up Wi-Fi'], 'answer': 1, 'explanation': 'A firewall filters inbound and outbound traffic based on rules.'}, {'category': 'Seguridad de Redes', 'difficulty': 'fácil', 'question': 'What is the purpose of a VPN?', 'options': ['To make passwords shorter', 'To create an encrypted tunnel over a network', 'To remove malware', 'To recover deleted files'], 'answer': 1, 'explanation': 'A VPN protects traffic by encrypting the connection between endpoints.'}, {'category': 'Seguridad de Redes', 'difficulty': 'fácil', 'question': 'What does DNS usually translate?', 'options': ['Emails into files', 'Domain names into IP addresses', 'Passwords into tokens', 'Ports into protocols'], 'answer': 1, 'explanation': 'DNS resolves human-readable domain names to IP addresses.'}, {'category': 'Seguridad de Redes', 'difficulty': 'media', 'question': 'Which protocol is commonly used for secure web traffic?', 'options': ['HTTP', 'FTP', 'HTTPS', 'Telnet'], 'answer': 2, 'explanation': 'HTTPS is HTTP over TLS, providing encryption and integrity.'}, {'category': 'Seguridad de Redes', 'difficulty': 'media', 'question': 'What port does HTTPS commonly use?', 'options': ['21', '53', '80', '443'], 'answer': 3, 'explanation': 'HTTPS commonly uses port 443.'}, {'category': 'Seguridad de Redes', 'difficulty': 'media', 'question': 'What is a common sign of a port scan?', 'options': ['One login attempt', 'Many connection attempts to multiple ports', 'A new wallpaper', 'A file rename'], 'answer': 1, 'explanation': 'A port scan often creates many rapid connection attempts across ports.'}, {'category': 'Seguridad de Redes', 'difficulty': 'difícil', 'question': 'What does IDS stand for?', 'options': ['Internet Defense System', 'Intrusion Detection System', 'Internal Data Shield', 'Integrated Domain Service'], 'answer': 1, 'explanation': 'IDS stands for Intrusion Detection System.'}, {'category': 'Seguridad de Redes', 'difficulty': 'difícil', 'question': 'What is the main difference between IDS and IPS?', 'options': ['IDS blocks traffic, IPS only logs', 'IPS blocks/prevents, IDS detects/alerts', 'They are exactly the same', 'IDS encrypts data'], 'answer': 1, 'explanation': 'An IPS is designed to actively prevent malicious traffic, while an IDS focuses on detection and alerting.'}, {'category': 'Seguridad Web', 'difficulty': 'fácil', 'question': 'What is SQL injection?', 'options': ['A screen bug', 'A way to inject malicious SQL into queries', 'A type of encryption', 'A backup method'], 'answer': 1, 'explanation': 'SQL injection happens when untrusted input is interpreted as SQL.'}, {'category': 'Seguridad Web', 'difficulty': 'fácil', 'question': 'What does XSS stand for?', 'options': ['Cross-Site Scripting', 'Cross Server Security', 'XML Site Scan', 'Cross System Sync'], 'answer': 0, 'explanation': 'XSS stands for Cross-Site Scripting.'}, {'category': 'Seguridad Web', 'difficulty': 'fácil', 'question': 'Which header helps reduce clickjacking?', 'options': ['X-Frame-Options', 'Cache-Control', 'Accept-Language', 'User-Agent'], 'answer': 0, 'explanation': 'X-Frame-Options can prevent a page from being framed by other sites.'}, {'category': 'Seguridad Web', 'difficulty': 'media', 'question': 'What is CSRF?', 'options': ['Cross-Site Request Forgery', 'Code Security Resource Filter', 'Cryptographic Session Reset', 'Cross-System Routing Failure'], 'answer': 0, 'explanation': 'CSRF tricks a browser into sending unwanted authenticated requests.'}, {'category': 'Seguridad Web', 'difficulty': 'media', 'question': 'What is the goal of input validation?', 'options': ['Make pages slower', 'Ensure data is safe and expected before use', 'Hide the source code', 'Compress web traffic'], 'answer': 1, 'explanation': 'Input validation helps prevent unsafe or unexpected data from reaching sensitive logic.'}, {'category': 'Seguridad Web', 'difficulty': 'media', 'question': 'Which practice is best for storing passwords?', 'options': ['Plain text', 'Base64 encoding', 'Hashing with a strong algorithm and salt', 'Putting them in comments'], 'answer': 2, 'explanation': 'Passwords should be hashed with a strong algorithm and salt, not stored in plain text.'}, {'category': 'Seguridad Web', 'difficulty': 'difícil', 'question': 'What is the purpose of Content Security Policy (CSP)?', 'options': ['To speed up CSS', 'To restrict what resources a page may load', 'To replace TLS', 'To store cookies'], 'answer': 1, 'explanation': 'CSP helps reduce XSS impact by limiting allowed content sources.'}, {'category': 'Seguridad Web', 'difficulty': 'difícil', 'question': 'Which is the safest response to suspicious user input in web apps?', 'options': ['Trust it if it looks normal', 'Concatenate it into queries', 'Validate, sanitize, and use parameterized queries', 'Ignore it entirely'], 'answer': 2, 'explanation': 'Validation and parameterized queries reduce injection risk.'}, {'category': 'Criptografía', 'difficulty': 'fácil', 'question': 'What is encryption used for?', 'options': ['Hiding data from unauthorized viewers', 'Deleting files', 'Increasing screen brightness', 'Creating usernames'], 'answer': 0, 'explanation': 'Encryption transforms data so only authorized parties can read it.'}, {'category': 'Criptografía', 'difficulty': 'fácil', 'question': 'What is hashing typically used for?', 'options': ['Recovering plaintext exactly', 'Checking integrity and storing passwords safely', 'Compressing videos', 'Sending emails'], 'answer': 1, 'explanation': 'Hashing is used for integrity checks and password storage.'}, {'category': 'Criptografía', 'difficulty': 'fácil', 'question': 'What does TLS protect?', 'options': ['Only screenshots', 'Data in transit', 'Only offline files', 'Keyboard layout'], 'answer': 1, 'explanation': 'TLS protects data as it moves across networks.'}, {'category': 'Criptografía', 'difficulty': 'media', 'question': 'What is the difference between symmetric and asymmetric encryption?', 'options': ['Symmetric uses one key, asymmetric uses a public/private key pair', 'They are identical', 'Asymmetric cannot encrypt', 'Symmetric only works online'], 'answer': 0, 'explanation': 'Symmetric encryption uses one shared key; asymmetric uses a public/private key pair.'}, {'category': 'Criptografía', 'difficulty': 'media', 'question': 'What is a digital signature used for?', 'options': ['Changing file names', 'Proving authenticity and integrity', 'Hiding browser tabs', 'Cleaning malware'], 'answer': 1, 'explanation': 'Digital signatures help verify who signed data and whether it changed.'}, {'category': 'Criptografía', 'difficulty': 'media', 'question': 'Why are salts added to password hashes?', 'options': ['To make passwords longer to memorize', 'To help prevent precomputed attacks like rainbow tables', 'To make hashing reversible', 'To avoid using keys'], 'answer': 1, 'explanation': 'Salts make each password hash unique and reduce rainbow table risk.'}, {'category': 'Criptografía', 'difficulty': 'difícil', 'question': 'What property does a cryptographic hash need?', 'options': ['Reversibility', 'Collision resistance', 'High screen resolution', 'Low memory use only'], 'answer': 1, 'explanation': 'Good hashes should make collisions extremely difficult to find.'}, {'category': 'Criptografía', 'difficulty': 'difícil', 'question': 'What is the purpose of forward secrecy?', 'options': ['Old traffic stays secure even if a long-term key is later exposed', 'Traffic is always anonymous', 'Keys never expire', 'Passwords are encrypted'], 'answer': 0, 'explanation': 'Forward secrecy protects past sessions even if a long-term key is compromised later.'}, {'category': 'Ingeniería Social', 'difficulty': 'fácil', 'question': 'What is phishing?', 'options': ['A file backup method', 'Tricking people into revealing info or clicking malicious links', 'A wireless protocol', 'A type of firewall'], 'answer': 1, 'explanation': 'Phishing relies on deception to steal data or deliver malicious content.'}, {'category': 'Ingeniería Social', 'difficulty': 'fácil', 'question': 'A suspicious message asking for urgent action is often a sign of what?', 'options': ['Good customer support', 'Social engineering', 'Compression', 'Data recovery'], 'answer': 1, 'explanation': 'Urgency is a common pressure tactic in social engineering.'}, {'category': 'Ingeniería Social', 'difficulty': 'fácil', 'question': 'What is the safest response to a suspicious link?', 'options': ['Click it quickly', 'Hover/inspect and verify the source first', 'Forward it everywhere', 'Reply with a password'], 'answer': 1, 'explanation': 'Verification helps avoid phishing and malware.'}, {'category': 'Ingeniería Social', 'difficulty': 'media', 'question': 'What is pretexting?', 'options': ['Writing code in advance', 'Creating a fake scenario to gain trust or access', 'Testing app speed', 'A backup policy'], 'answer': 1, 'explanation': 'Pretexting uses a fabricated story or role to manipulate targets.'}, {'category': 'Ingeniería Social', 'difficulty': 'media', 'question': 'What should you do if someone claims to be IT and asks for your password?', 'options': ['Share it if they sound official', 'Verify through official channels and never share your password', 'Send it by email', 'Post it in chat'], 'answer': 1, 'explanation': 'Legitimate support should never need your password.'}, {'category': 'Ingeniería Social', 'difficulty': 'media', 'question': 'What is tailgating in security?', 'options': ['Following someone into a restricted area without permission', 'Changing a username', 'Using a VPN', 'Encrypting a hard drive'], 'answer': 0, 'explanation': 'Tailgating is physical social engineering.'}, {'category': 'Ingeniería Social', 'difficulty': 'difícil', 'question': 'Why do social engineering attacks often work well?', 'options': ['They target human trust and urgency', 'They require supercomputers', 'They only affect Linux', 'They are always visible'], 'answer': 0, 'explanation': 'Many attacks succeed by manipulating people instead of bypassing technology.'}, {'category': 'Ingeniería Social', 'difficulty': 'difícil', 'question': 'What is a good anti-phishing habit?', 'options': ['Trust every sender name', 'Check domains and verify requests out-of-band', 'Use the same password everywhere', 'Open attachments immediately'], 'answer': 1, 'explanation': 'Checking domain names and verifying requests helps stop phishing.'}, {'category': 'Malware y Virus', 'difficulty': 'fácil', 'question': 'What is malware?', 'options': ['Malicious software', 'A new browser tab', 'Encrypted text', 'Network hardware'], 'answer': 0, 'explanation': 'Malware is software made to harm, spy, or disrupt.'}, {'category': 'Malware y Virus', 'difficulty': 'fácil', 'question': 'What does a virus usually need to spread?', 'options': ['A host file or program', 'A printer', 'A keyboard', 'A VPN'], 'answer': 0, 'explanation': 'A virus typically attaches to a host file or program.'}, {'category': 'Malware y Virus', 'difficulty': 'fácil', 'question': 'What is ransomware?', 'options': ['Software that improves speed', 'Malware that locks data and demands payment', 'A password manager', 'A backup tool'], 'answer': 1, 'explanation': 'Ransomware encrypts or locks files and demands payment.'}, {'category': 'Malware y Virus', 'difficulty': 'media', 'question': 'What is a trojan?', 'options': ['A legitimate update', 'Malware disguised as something harmless or useful', 'A wireless card', 'A file backup'], 'answer': 1, 'explanation': 'Trojan malware pretends to be safe to trick users.'}, {'category': 'Malware y Virus', 'difficulty': 'media', 'question': 'What is a common sign of malware infection?', 'options': ['Unexpected pop-ups or system slowdowns', 'A new notebook', 'Lower screen brightness', 'Clean desktop icons'], 'answer': 0, 'explanation': 'Unexpected behavior can indicate malware.'}, {'category': 'Malware y Virus', 'difficulty': 'media', 'question': 'What does a sandbox do in malware analysis?', 'options': ['Makes coffee', 'Isolates suspicious code in a safe environment', 'Deletes all files', 'Speeds up downloads'], 'answer': 1, 'explanation': 'A sandbox helps observe behavior without risking the main system.'}, {'category': 'Malware y Virus', 'difficulty': 'difícil', 'question': 'Why do some malware samples use obfuscation?', 'options': ['To make detection and analysis harder', 'To improve battery life', 'To open ports safely', 'To reduce file size only'], 'answer': 0, 'explanation': "Obfuscation hides the malware's true behavior or code structure."}, {'category': 'Malware y Virus', 'difficulty': 'difícil', 'question': 'What is the best first step after suspecting malware?', 'options': ['Disconnect from the network and report it', 'Upload it everywhere', 'Delete system32', 'Share it in chat'], 'answer': 0, 'explanation': 'Isolation and reporting help limit damage.'}, {'category': 'Tools & Techniques', 'difficulty': 'fácil', 'question': 'What is the purpose of multi-factor authentication (MFA)?', 'options': ['Add an extra verification step', 'Replace all passwords', 'Disable login alerts', 'Speed up typing'], 'answer': 0, 'explanation': 'MFA improves account security by requiring more than one factor.'}, {'category': 'Tools & Techniques', 'difficulty': 'fácil', 'question': 'What is a password manager useful for?', 'options': ['Storing unique passwords securely', 'Making malware', 'Changing IP addresses', 'Filtering spam'], 'answer': 0, 'explanation': 'Password managers help users create and store strong unique passwords.'}, {'category': 'Tools & Techniques', 'difficulty': 'fácil', 'question': 'What is an update/patch usually for?', 'options': ['Adding vulnerabilities', 'Fixing bugs and security issues', 'Deleting backups', 'Lowering encryption'], 'answer': 1, 'explanation': 'Patches often fix vulnerabilities and bugs.'}, {'category': 'Tools & Techniques', 'difficulty': 'media', 'question': 'What does logging help with in security?', 'options': ['Reconstructing events and detecting anomalies', 'Hiding attacks', 'Breaking encryption', 'Formatting disks'], 'answer': 0, 'explanation': 'Logs are important for monitoring and incident response.'}, {'category': 'Tools & Techniques', 'difficulty': 'media', 'question': 'Why is least privilege important?', 'options': ['It gives everyone admin', 'It limits access to only what is needed', 'It removes authentication', 'It blocks all users'], 'answer': 1, 'explanation': 'Least privilege reduces the impact of mistakes or compromise.'}, {'category': 'Tools & Techniques', 'difficulty': 'media', 'question': 'What is MFA token phishing designed to steal?', 'options': ['Screenshots', 'One-time codes or session tokens', 'Printer ink', 'Keyboard settings'], 'answer': 1, 'explanation': 'Attackers may try to capture codes or session tokens to bypass MFA.'}, {'category': 'Tools & Techniques', 'difficulty': 'difícil', 'question': 'What is the goal of a security baseline?', 'options': ['Create a minimum secure configuration standard', 'Make every system identical forever', 'Remove updates', 'Disable permissions'], 'answer': 0, 'explanation': 'A baseline defines a secure starting configuration for systems.'}, {'category': 'Tools & Techniques', 'difficulty': 'difícil', 'question': 'Why are backups important?', 'options': ['They make malware run faster', 'They help recovery after loss, failure, or ransomware', 'They replace authentication', 'They are only for screenshots'], 'answer': 1, 'explanation': 'Backups are essential for recovery and resilience.'}, {'category': 'Concepts & Fundamentals', 'difficulty': 'fácil', 'question': 'What does CIA stand for in security?', 'options': ['Confidentiality, Integrity, Availability', 'Code, Input, Access', 'Cryptography, Identity, Authentication', 'Control, Internet, Alert'], 'answer': 0, 'explanation': 'CIA is a core security triad: confidentiality, integrity, availability.'}, {'category': 'Concepts & Fundamentals', 'difficulty': 'fácil', 'question': 'What is authentication?', 'options': ['Proving who you are', 'Setting screen brightness', 'Encrypting a file', 'Changing file permissions'], 'answer': 0, 'explanation': 'Authentication verifies identity.'}, {'category': 'Concepts & Fundamentals', 'difficulty': 'fácil', 'question': 'What is authorization?', 'options': ['Deciding what an authenticated user may access', 'Changing the keyboard layout', 'Finding malware', 'Backing up emails'], 'answer': 0, 'explanation': 'Authorization determines permissions after identity is verified.'}, {'category': 'Concepts & Fundamentals', 'difficulty': 'media', 'question': 'What is a vulnerability?', 'options': ['A security weakness', 'A type of network cable', 'A backup policy', 'A login form'], 'answer': 0, 'explanation': 'A vulnerability is a weakness that could be exploited.'}, {'category': 'Concepts & Fundamentals', 'difficulty': 'media', 'question': 'What is a threat?', 'options': ['Anything that could exploit a vulnerability', 'A password manager', 'A software patch', 'A hard drive format'], 'answer': 0, 'explanation': 'A threat is a potential cause of harm.'}, {'category': 'Concepts & Fundamentals', 'difficulty': 'media', 'question': 'What is risk in cybersecurity?', 'options': ['The chance and impact of something bad happening', 'A type of firewall', 'The number of users', 'The internet speed'], 'answer': 0, 'explanation': 'Risk is typically the likelihood times impact of an event.'}, {'category': 'Concepts & Fundamentals', 'difficulty': 'difícil', 'question': 'What is defense in depth?', 'options': ['Using many layers of security controls', 'Using only one strong password', 'Turning off logs', 'Sharing admin access'], 'answer': 0, 'explanation': 'Defense in depth uses layered controls to reduce risk.'}, {'category': 'Concepts & Fundamentals', 'difficulty': 'difícil', 'question': 'Why is secure default configuration important?', 'options': ['It reduces the chance of misconfiguration and exposure', 'It disables all access', 'It makes software slower', 'It replaces training'], 'answer': 0, 'explanation': 'Secure defaults help reduce common setup mistakes.'}, {'category': 'CTF & Hacking', 'difficulty': 'fácil', 'question': 'What does CTF stand for?', 'options': ['Capture The Flag', 'Control The Firewall', 'Cyber Test Format', 'Code Transfer Flow'], 'answer': 0, 'explanation': 'CTF means Capture The Flag, a learning competition format.'}, {'category': 'CTF & Hacking', 'difficulty': 'fácil', 'question': "In a CTF, what is a 'flag' usually?", 'options': ['A secret value proving a solved challenge', 'A network cable', 'A password manager', 'A log file'], 'answer': 0, 'explanation': 'A flag is the expected solution token for a challenge.'}, {'category': 'CTF & Hacking', 'difficulty': 'fácil', 'question': 'What is enumeration in a security assessment?', 'options': ['Gathering information about a target or system', 'Deleting files', 'Formatting a disk', 'Changing wallpaper'], 'answer': 0, 'explanation': 'Enumeration is the information-gathering phase.'}, {'category': 'CTF & Hacking', 'difficulty': 'media', 'question': 'Why are CTF labs useful?', 'options': ['They provide safe practice environments', 'They disable security everywhere', 'They replace real systems', 'They are only for gaming'], 'answer': 0, 'explanation': 'CTF labs let learners practice safely and legally.'}, {'category': 'CTF & Hacking', 'difficulty': 'media', 'question': 'What is a hash crack attempt often used for in CTFs?', 'options': ['Learning about weak passwords in a controlled lab', 'Hiding evidence', 'Creating malware', 'Bypassing updates'], 'answer': 0, 'explanation': 'In CTFs, hash exercises teach password security concepts in a safe setting.'}, {'category': 'CTF & Hacking', 'difficulty': 'media', 'question': "What does 'sandbox' mean in a CTF or malware context?", 'options': ['A safe isolated environment for testing', 'A public forum', 'A cloud backup', 'A code formatter'], 'answer': 0, 'explanation': 'A sandbox isolates activity from the rest of the system.'}, {'category': 'CTF & Hacking', 'difficulty': 'difícil', 'question': 'What is responsible disclosure?', 'options': ['Reporting a vulnerability privately and responsibly', 'Posting passwords publicly', 'Ignoring bugs', 'Selling malware'], 'answer': 0, 'explanation': 'Responsible disclosure helps vendors fix issues before public release.'}, {'category': 'CTF & Hacking', 'difficulty': 'difícil', 'question': 'What is the main purpose of a write-up after a CTF challenge?', 'options': ['Share learning and explain the solution method', 'Hide the flag forever', 'Delete logs', 'Attack real systems'], 'answer': 0, 'explanation': 'Write-ups help others learn from the challenge.'}]
+import discord
+from discord.ext import commands
+from discord import app_commands
 
-CATEGORIES = sorted({q["category"] for q in QUESTIONS})
+from questions import QUESTIONS, CATEGORIES, normalize_category
 
-def normalize_category(name: str) -> str:
-    value = name.strip().lower()
-    aliases = {
-        "network": "Network Security",
-        "net": "Network Security",
-        "web": "Web Security",
-        "crypto": "Cryptography",
-        "cryptography": "Cryptography",
-        "social": "Social Engineering",
-        "social engineering": "Social Engineering",
-        "malware": "Malware & Viruses",
-        "tools": "Tools & Techniques",
-        "fundamentals": "Concepts & Fundamentals",
-        "concepts": "Concepts & Fundamentals",
-        "ctf": "CTF & Hacking",
-        "hacking": "CTF & Hacking",
-    }
-    for k, v in aliases.items():
-        if value == k:
-            return v
-    for category in CATEGORIES:
-        if value == category.lower():
-            return category
-    return ""
+TOKEN = os.getenv("DISCORD_TOKEN")
+PREFIX = "!"
+DATA_DIR = Path("data")
+STATS_FILE = DATA_DIR / "stats.json"
+
+DATA_DIR.mkdir(exist_ok=True)
+
+intents = discord.Intents.default()
+intents.message_content = True
+
+bot = commands.Bot(command_prefix=commands.when_mentioned_or(PREFIX), intents=intents, help_command=None)
+
+# ---------- Persistence ----------
+
+def load_stats() -> dict:
+    if STATS_FILE.exists():
+        try:
+            return json.loads(STATS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+def save_stats(stats: dict) -> None:
+    DATA_DIR.mkdir(exist_ok=True)
+    STATS_FILE.write_text(json.dumps(stats, indent=2, ensure_ascii=False), encoding="utf-8")
+
+stats = load_stats()
+
+def ensure_user(user_id: int) -> dict:
+    sid = str(user_id)
+    if sid not in stats:
+        stats[sid] = {
+            "correct": 0,
+            "wrong": 0,
+            "played": 0,
+            "xp": 0,
+            "last_daily": "",
+        }
+    return stats[sid]
+
+def add_stats(user_id: int, correct: int = 0, wrong: int = 0, played: int = 0, xp: int = 0) -> None:
+    entry = ensure_user(user_id)
+    entry["correct"] += correct
+    entry["wrong"] += wrong
+    entry["played"] += played
+    entry["xp"] += xp
+    save_stats(stats)
+
+# ---------- Helpers ----------
+
+def clean_category_name(name: Optional[str]) -> Optional[str]:
+    if not name:
+        return None
+    normalized = normalize_category(name)
+    return normalized or None
+
+def pick_questions(amount: int = 10, category: Optional[str] = None, difficulty: Optional[str] = None):
+    pool = QUESTIONS
+    if category:
+        pool = [q for q in pool if q["category"] == category]
+    if difficulty:
+        pool = [q for q in pool if q["difficulty"] == difficulty]
+    if not pool:
+        return []
+    amount = max(1, min(amount, len(pool)))
+    return random.sample(pool, amount)
+
+DIFFICULTY_ES = {"easy": "Fácil", "medium": "Medio", "hard": "Difícil"}
+
+def question_embed(q: dict, index: int, total: int, title: str, reveal: bool = False, chosen: Optional[int] = None):
+    embed = discord.Embed(
+        title=f"{title} — {index}/{total}",
+        description=q["question"],
+        color=discord.Color.blurple(),
+    )
+    options = []
+    letters = ["A", "B", "C", "D"]
+    for i, option in enumerate(q["options"]):
+        prefix = f"**{letters[i]}.** "
+        if reveal and i == q["answer"]:
+            options.append(f"{prefix}✅ {option}")
+        elif reveal and chosen is not None and i == chosen and chosen != q["answer"]:
+            options.append(f"{prefix}❌ {option}")
+        else:
+            options.append(f"{prefix}{option}")
+    embed.add_field(name="Opciones", value="\n".join(options), inline=False)
+    embed.add_field(name="Categoría", value=q["category"], inline=True)
+    embed.add_field(name="Dificultad", value=DIFFICULTY_ES.get(q["difficulty"], q["difficulty"].title()), inline=True)
+    if reveal:
+        embed.add_field(name="Explicación", value=q["explanation"], inline=False)
+    embed.set_footer(text="Responde con botones. Solo la persona que inició el reto puede contestar.")
+    return embed
+
+class AnswerView(discord.ui.View):
+    def __init__(self, author_id: int, question: dict, timeout: int = 45):
+        super().__init__(timeout=timeout)
+        self.author_id = author_id
+        self.question = question
+        self.choice: Optional[int] = None
+        self.correct: Optional[bool] = None
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("Solo la persona que inició el juego puede responder.", ephemeral=True)
+            return False
+        return True
+
+    async def on_timeout(self):
+        for child in self.children:
+            child.disabled = True
+
+    async def _choose(self, interaction: discord.Interaction, idx: int):
+        self.choice = idx
+        self.correct = idx == self.question["answer"]
+        for child in self.children:
+            child.disabled = True
+        embed = question_embed(
+            self.question,
+            1,
+            1,
+            "Resultado",
+            reveal=True,
+            chosen=idx,
+        )
+        if self.correct:
+            embed.color = discord.Color.green()
+            embed.description = "Correcto."
+        else:
+            embed.color = discord.Color.red()
+            embed.description = "Incorrecto."
+        await interaction.response.edit_message(embed=embed, view=self)
+        self.stop()
+
+    @discord.ui.button(label="A", style=discord.ButtonStyle.primary)
+    async def a(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._choose(interaction, 0)
+
+    @discord.ui.button(label="B", style=discord.ButtonStyle.primary)
+    async def b(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._choose(interaction, 1)
+
+    @discord.ui.button(label="C", style=discord.ButtonStyle.primary)
+    async def c(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._choose(interaction, 2)
+
+    @discord.ui.button(label="D", style=discord.ButtonStyle.primary)
+    async def d(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self._choose(interaction, 3)
+
+class FlashcardView(discord.ui.View):
+    def __init__(self, author_id: int, question: dict, timeout: int = 60):
+        super().__init__(timeout=timeout)
+        self.author_id = author_id
+        self.question = question
+        self.revealed = False
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message("Solo la persona que inició el estudio puede interactuar.", ephemeral=True)
+            return False
+        return True
+
+    @discord.ui.button(label="Mostrar respuesta", style=discord.ButtonStyle.success)
+    async def reveal(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.revealed = True
+        embed = discord.Embed(
+            title="Flashcard",
+            description=self.question["question"],
+            color=discord.Color.gold(),
+        )
+        embed.add_field(name="Respuesta", value=f"**{self.question['options'][self.question['answer']]}**", inline=False)
+        embed.add_field(name="Explicación", value=self.question["explanation"], inline=False)
+        embed.add_field(name="Categoría", value=self.question["category"], inline=True)
+        await interaction.response.edit_message(embed=embed, view=self)
+        for child in self.children:
+            child.disabled = True
+        self.stop()
+
+async def send_question(ctx: commands.Context, q: dict, index: int, total: int, title: str):
+    view = AnswerView(ctx.author.id, q)
+    embed = question_embed(q, index, total, title)
+    msg = await ctx.send(embed=embed, view=view)
+    await view.wait()
+    if view.choice is None:
+        try:
+            await msg.edit(view=view)
+        except Exception:
+            pass
+        return False
+    return view.correct
+
+async def run_quiz(ctx: commands.Context, questions: list[dict], title: str, practice: bool = False):
+    correct = 0
+    wrong = 0
+
+    if ctx.interaction:
+        try:
+            await ctx.defer()
+        except Exception:
+            pass
+
+    intro = discord.Embed(
+        title=title,
+        description=f"Preguntas: **{len(questions)}**\nModo: {'Práctica' if practice else 'Quiz'}",
+        color=discord.Color.blurple(),
+    )
+    await ctx.send(embed=intro)
+
+    for idx, q in enumerate(questions, start=1):
+        view = AnswerView(ctx.author.id, q, timeout=60 if practice else 45)
+        embed = question_embed(q, idx, len(questions), title)
+        msg = await ctx.send(embed=embed, view=view)
+        await view.wait()
+
+        if view.choice is None:
+            result = discord.Embed(
+                title="Tiempo agotado",
+                description=f"La respuesta correcta era: **{q['options'][q['answer']]}**",
+                color=discord.Color.orange(),
+            )
+            result.add_field(name="Explicación", value=q["explanation"], inline=False)
+            result.add_field(name="Categoría", value=q["category"], inline=True)
+            result.add_field(name="Dificultad", value=DIFFICULTY_ES.get(q["difficulty"], q["difficulty"].title()), inline=True)
+            await msg.edit(embed=result, view=None)
+            wrong += 1
+            continue
+
+        if view.correct:
+            correct += 1
+        else:
+            wrong += 1
+
+        result = question_embed(q, idx, len(questions), title, reveal=True, chosen=view.choice)
+        result.color = discord.Color.green() if view.correct else discord.Color.red()
+        await msg.edit(embed=result, view=None)
+
+        if practice:
+            await ctx.send(f"**Explicación:** {q['explanation']}")
+
+    add_stats(ctx.author.id, correct=correct, wrong=wrong, played=len(questions), xp=correct * (20 if practice else 25))
+    summary = discord.Embed(
+        title=f"Resultado de {title}",
+        description=f"Correctas: **{correct}**\nIncorrectas: **{wrong}**\nPuntuación XP: **{correct * (20 if practice else 25)}**",
+        color=discord.Color.green() if correct >= wrong else discord.Color.red(),
+    )
+    await ctx.send(embed=summary)
+
+def current_daily_question() -> dict:
+    today = date.today().isoformat()
+    idx = int(hashlib.sha256(today.encode()).hexdigest(), 16) % len(QUESTIONS)
+    return QUESTIONS[idx]
+
+def build_rankboard(limit: int = 10):
+    items = []
+    for uid, data in stats.items():
+        items.append((uid, data.get("xp", 0), data.get("correct", 0), data.get("played", 0)))
+    items.sort(key=lambda x: (x[1], x[2]), reverse=True)
+    return items[:limit]
+
+# ---------- Commands ----------
+
+@bot.hybrid_command(name="quiz", description="Inicia un quiz de preguntas de ciberseguridad.")
+@app_commands.describe(amount="Cantidad de preguntas (1-20)", category="Filtra por categoría")
+async def quiz(ctx: commands.Context, amount: int = 10, category: Optional[str] = None):
+    cat = clean_category_name(category)
+    if category and not cat:
+        await ctx.send(f"Categoría no válida. Usa una de estas: {', '.join(CATEGORIES)}")
+        return
+    questions = pick_questions(amount=amount, category=cat)
+    if not questions:
+        await ctx.send("No encontré preguntas para esa selección.")
+        return
+    await run_quiz(ctx, questions, title="Quiz")
+
+@bot.hybrid_command(name="practice", description="Modo práctica con explicación después de cada respuesta.")
+@app_commands.describe(amount="Cantidad de preguntas (1-20)", category="Filtra por categoría")
+async def practice(ctx: commands.Context, amount: int = 5, category: Optional[str] = None):
+    cat = clean_category_name(category)
+    if category and not cat:
+        await ctx.send(f"Categoría no válida. Usa una de estas: {', '.join(CATEGORIES)}")
+        return
+    questions = pick_questions(amount=amount, category=cat)
+    if not questions:
+        await ctx.send("No encontré preguntas para esa selección.")
+        return
+    await run_quiz(ctx, questions, title="Modo Práctica", practice=True)
+
+@bot.hybrid_command(name="challenge", description="Modo desafío con preguntas aleatorias y tiempo más corto.")
+@app_commands.describe(amount="Cantidad de preguntas (1-20)", category="Filtra por categoría")
+async def challenge(ctx: commands.Context, amount: int = 5, category: Optional[str] = None):
+    cat = clean_category_name(category)
+    if category and not cat:
+        await ctx.send(f"Categoría no válida. Usa una de estas: {', '.join(CATEGORIES)}")
+        return
+    pool = QUESTIONS
+    if cat:
+        pool = [q for q in pool if q["category"] == cat]
+    hard_pool = [q for q in pool if q["difficulty"] in ("medium", "hard")]
+    questions = random.sample(hard_pool or pool, k=min(amount, len(hard_pool or pool)))
+    if not questions:
+        await ctx.send("No encontré preguntas para esa selección.")
+        return
+    await run_quiz(ctx, questions, title="Modo Desafío", practice=False)
+
+@bot.hybrid_command(name="flashcard", description="Modo flashcard para estudiar.")
+@app_commands.describe(category="Filtra por categoría")
+async def flashcard(ctx: commands.Context, category: Optional[str] = None):
+    cat = clean_category_name(category)
+    if category and not cat:
+        await ctx.send(f"Categoría no válida. Usa una de estas: {', '.join(CATEGORIES)}")
+        return
+    pool = QUESTIONS if not cat else [q for q in QUESTIONS if q["category"] == cat]
+    if not pool:
+        await ctx.send("No encontré preguntas para esa selección.")
+        return
+    q = random.choice(pool)
+    view = FlashcardView(ctx.author.id, q)
+    embed = discord.Embed(
+        title="Flashcard",
+        description=q["question"],
+        color=discord.Color.gold(),
+    )
+    embed.add_field(name="Categoría", value=q["category"], inline=True)
+    embed.add_field(name="Dificultad", value=DIFFICULTY_ES.get(q["difficulty"], q["difficulty"].title()), inline=True)
+    await ctx.send(embed=embed, view=view)
+
+@bot.hybrid_command(name="category", description="Juega un quiz usando una categoría específica.")
+@app_commands.describe(name="Nombre de la categoría", amount="Cantidad de preguntas (1-20)")
+async def category(ctx: commands.Context, name: str, amount: int = 10):
+    cat = clean_category_name(name)
+    if not cat:
+        await ctx.send(f"Categoría no válida. Usa una de estas: {', '.join(CATEGORIES)}")
+        return
+    questions = pick_questions(amount=amount, category=cat)
+    if not questions:
+        await ctx.send("No encontré preguntas para esa categoría.")
+        return
+    await run_quiz(ctx, questions, title=f"Quiz de Categoría: {cat}")
+
+@bot.hybrid_command(name="daily", description="Resuelve la pregunta del día.")
+async def daily(ctx: commands.Context):
+    q = current_daily_question()
+    entry = ensure_user(ctx.author.id)
+    today = date.today().isoformat()
+    if entry.get("last_daily") == today:
+        await ctx.send("Ya resolviste la pregunta diaria de hoy. Vuelve mañana.")
+        return
+    view = AnswerView(ctx.author.id, q, timeout=60)
+    embed = question_embed(q, 1, 1, "Reto Diario")
+    msg = await ctx.send(embed=embed, view=view)
+    await view.wait()
+    if view.choice is None:
+        await msg.edit(content="Se acabó el tiempo.", view=None)
+        add_stats(ctx.author.id, wrong=1, played=1)
+        return
+    entry["last_daily"] = today
+    save_stats(stats)
+    if view.correct:
+        add_stats(ctx.author.id, correct=1, played=1, xp=35)
+        await msg.edit(content="¡Correcto! Ganaste XP extra por el daily.", view=None)
+    else:
+        add_stats(ctx.author.id, wrong=1, played=1)
+        await msg.edit(content=f"Incorrecto. La respuesta era: **{q['options'][q['answer']]}**", view=None)
+
+@bot.hybrid_command(name="score", description="Muestra tus estadísticas.")
+async def score(ctx: commands.Context):
+    entry = ensure_user(ctx.author.id)
+    embed = discord.Embed(title=f"Score de {ctx.author.display_name}", color=discord.Color.blurple())
+    embed.add_field(name="Correctas", value=str(entry["correct"]), inline=True)
+    embed.add_field(name="Incorrectas", value=str(entry["wrong"]), inline=True)
+    embed.add_field(name="Jugadas", value=str(entry["played"]), inline=True)
+    embed.add_field(name="XP", value=str(entry["xp"]), inline=True)
+    await ctx.send(embed=embed)
+
+@bot.hybrid_command(name="leaderboard", description="Muestra el ranking por XP.")
+async def leaderboard(ctx: commands.Context):
+    board = build_rankboard()
+    if not board:
+        await ctx.send("Todavía no hay ranking.")
+        return
+    lines = []
+    for i, (uid, xp, correct, played) in enumerate(board, start=1):
+        user = bot.get_user(int(uid))
+        name = user.name if user else f"Usuario {uid}"
+        lines.append(f"**{i}. {name}** — XP: {xp} | ✔ {correct} | 🎯 {played}")
+    embed = discord.Embed(title="Tabla de Clasificación", description="\n".join(lines), color=discord.Color.gold())
+    await ctx.send(embed=embed)
+
+@bot.hybrid_command(name="categories", description="Lista las categorías disponibles.")
+async def categories(ctx: commands.Context):
+    embed = discord.Embed(title="Categorías disponibles", description="\n".join(f"• {c}" for c in CATEGORIES), color=discord.Color.blurple())
+    await ctx.send(embed=embed)
+
+@bot.hybrid_command(name="help", description="Muestra ayuda del bot.")
+async def help_cmd(ctx: commands.Context):
+    text = (
+        "**Comandos con prefijo:** `!quiz`, `!practice`, `!challenge`, `!flashcard`, `!category`, `!daily`, `!score`, `!leaderboard`, `!categories`, `!help`\n"
+        "**Slash commands:** `/quiz`, `/practice`, `/challenge`, `/flashcard`, `/category`, `/daily`, `/score`, `/leaderboard`, `/categories`, `/help`\n\n"
+        "Ejemplos:\n"
+        "`!quiz 10`\n"
+        "`/practice amount:5 category:Web Security`\n"
+        "`/category name:Cryptography amount:8`"
+    )
+    await ctx.send(text)
+
+@bot.event
+async def on_ready():
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} slash commands.")
+    except Exception as e:
+        print("Could not sync commands:", e)
+    print(f"Logged in as {bot.user} ({bot.user.id})")
+
+async def main():
+    if not TOKEN:
+        raise RuntimeError("DISCORD_TOKEN no está configurado.")
+    async with bot:
+        await bot.start(TOKEN)
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
